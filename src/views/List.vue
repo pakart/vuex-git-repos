@@ -53,8 +53,28 @@ export default {
   },
   mounted() {
     fetch('https://api.github.com/search/code?q=addClass+user:mozilla&page=2', { method: 'HEAD' })
-      .then((response) => console.log(response.headers.get('Link')));
-    fetch('https://api.github.com/search/repositories?q=followers:%3E1&sort=followers&per_page=3&page=3', {})
+      .then((response) => {
+        // console.log('slice', response.headers.get('Link')
+        // .slice(response.headers.get('Link').indexOf('page='),
+        // response.headers.get('Link').indexOf('>; rel="last"')));
+        // TODO
+        // *сделать динамическую сборку строки запроса для пагера
+        // *сделать массив состояния последнего запроса в локал сторадже
+        // *сделать сам пагер
+        // *сделать довести до ума поиск и чистку мусора
+        // *сделать страницу с инфой
+        // *повыносить лишний функционал в отдельные файлики (сборка пагера, сборка запроса)
+        //
+        // http://localhost:8080/
+        // https://developer.github.com/v3/guides/traversing-with-pagination/ - пагинэйшн
+        // https://github.com/avito-tech/pro-fe-trainee-task - case
+        // https://developer.github.com/v3/search/#search-repositories - git search
+        // https://regex101.com/r/tEfwYE/1 - regexp
+        //
+        console.log('regexp', response.headers.get('Link').match('page=(\\d+)>; rel="last"')[1]);
+        console.log('start', response.headers.get('Link'));
+      });
+    fetch('https://api.github.com/search/repositories?q=followers:%3E1&sort=followers&per_page=3&page=3')
       .then((response) => response.json())
       .then(
         (json) => {
