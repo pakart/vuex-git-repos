@@ -5,11 +5,13 @@ Vue.use(Vuex);
 
 export default new Vuex.Store({
   state: {
+    searchParams: [],
   },
   mutations: {
   },
   actions: {
   },
-  modules: {
+  getters: {
+    searchParams: (s) => s.tasks,
   },
 });
