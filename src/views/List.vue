@@ -15,7 +15,6 @@
      <table>
        <thead>
         <tr>
-          <th>#</th>
           <th>Repo's name</th>
           <th>Stars</th>
           <th>Last commit date</th>
@@ -23,9 +22,8 @@
         </tr>
        </thead>
        <tbody>
-      <tr v-for="(repo, idx) of this.repos"
+      <tr v-for="(repo) of this.repos"
       :key="repo.id">
-        <td>{{idx + 1}}</td>
         <td>{{repo.name}}</td>
         <td>{{repo.stargazers_count}}</td>
         <td>{{repo.updated_at}}</td>
@@ -38,51 +36,72 @@
        </tbody>
      </table>
    </div>
+   <div>
+    <ul class="pagination">
+      <li class="waves-effect" v-on:click="moveToPage(paginationParams.prevPage)">
+        <a href="#!"><i class="material-icons" >chevron_left</i></a></li>
+      <li v-for="idx in paginationParams.lastPage"
+      :key="idx" class="waves-effect" v-on:click="moveToPage(idx)">
+        <a href="#!">{{idx}}</a>
+        </li>
+      <li class="waves-effect" v-on:click="moveToPage(paginationParams.nextPage)">
+        <a href="#!"><i class="material-icons">chevron_right</i></a></li>
+    </ul>
+   </div>
  </div>
 </template>
 
 <script>
+import parser from '@/funcs/parser';
+import pageReq from '@/funcs/pageRequestConstructor';
+
 export default {
   name: 'list',
   data: () => ({
     repos: [],
+    lol: 22,
+    paginationParams: {},
+    requestUrl: 'https://api.github.com/search/repositories?q=followers:%3E1&sort=followers&per_page=10&page=1',
+    paginator: 1,
   }),
 
   components: {
 
   },
   mounted() {
-    fetch('https://api.github.com/search/code?q=addClass+user:mozilla&page=2', { method: 'HEAD' })
+    fetch(this.requestUrl, { method: 'HEAD' })
       .then((response) => {
-        // console.log('slice', response.headers.get('Link')
-        // .slice(response.headers.get('Link').indexOf('page='),
-        // response.headers.get('Link').indexOf('>; rel="last"')));
-        // TODO
-        // *сделать динамическую сборку строки запроса для пагера
-        // *сделать массив состояния последнего запроса в локал сторадже
-        // *сделать сам пагер
-        // *сделать довести до ума поиск и чистку мусора
-        // *сделать страницу с инфой
-        // *повыносить лишний функционал в отдельные файлики (сборка пагера, сборка запроса)
-        //
-        // http://localhost:8080/
-        // https://developer.github.com/v3/guides/traversing-with-pagination/ - пагинэйшн
-        // https://github.com/avito-tech/pro-fe-trainee-task - case
-        // https://developer.github.com/v3/search/#search-repositories - git search
-        // https://regex101.com/r/tEfwYE/1 - regexp
-        //
-        console.log('regexp', response.headers.get('Link').match('page=(\\d+)>; rel="last"')[1]);
-        console.log('start', response.headers.get('Link'));
+        const linkHeader = response.headers.get('Link');
+        this.paginationParams = parser(linkHeader, this.requestUrl);
       });
-    fetch('https://api.github.com/search/repositories?q=followers:%3E1&sort=followers&per_page=3&page=3')
+    fetch(this.requestUrl)
       .then((response) => response.json())
       .then(
         (json) => {
-          console.log(json);
           this.repos = json.items;
-          console.log(this.repos);
         },
       );
+  },
+  methods: {
+    moveToPage(pageNumber) {
+      const newUrl = pageReq(this.requestUrl, pageNumber);
+      // console.log(newUrl);
+      fetch(newUrl, { method: 'HEAD' })
+        .then((response) => {
+          const linkHeader = response.headers.get('Link');
+          this.requestUrl = newUrl;
+          this.paginationParams = parser(linkHeader, this.requestUrl);
+        });
+
+      fetch(newUrl)
+        .then((response) => response.json())
+        .then(
+          (json) => {
+            this.repos = json.items;
+            this.requestUrl = newUrl;
+          },
+        );
+    },
   },
 };
 </script>
