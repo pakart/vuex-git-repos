@@ -40,10 +40,12 @@
     <ul class="pagination">
       <li class="waves-effect" v-on:click="moveToPage(paginationParams.prevPage)">
         <a href="#!"><i class="material-icons" >chevron_left</i></a></li>
-      <li v-for="idx in paginationParams.lastPage"
-      :key="idx" class="waves-effect" v-on:click="moveToPage(idx)">
+      <li v-for="idx in makePaginationArray(paginationParams.currentPage,
+      paginationParams.lastPage)"
+        :key="idx" class="waves-effect" v-on:click="moveToPage(idx)"
+        v-bind:class="{ active: idx === paginationParams.currentPage }">
         <a href="#!">{{idx}}</a>
-        </li>
+      </li>
       <li class="waves-effect" v-on:click="moveToPage(paginationParams.nextPage)">
         <a href="#!"><i class="material-icons">chevron_right</i></a></li>
     </ul>
@@ -58,6 +60,7 @@ import pageReq from '@/funcs/pageRequestConstructor';
 export default {
   name: 'list',
   data: () => ({
+    isActive: false,
     repos: [],
     lol: 22,
     paginationParams: {},
@@ -65,9 +68,6 @@ export default {
     paginator: 1,
   }),
 
-  components: {
-
-  },
   mounted() {
     fetch(this.requestUrl, { method: 'HEAD' })
       .then((response) => {
@@ -79,13 +79,14 @@ export default {
       .then(
         (json) => {
           this.repos = json.items;
+          this.makePaginationArray(this.paginationParams.currentPage);
         },
       );
   },
+
   methods: {
     moveToPage(pageNumber) {
       const newUrl = pageReq(this.requestUrl, pageNumber);
-      // console.log(newUrl);
       fetch(newUrl, { method: 'HEAD' })
         .then((response) => {
           const linkHeader = response.headers.get('Link');
@@ -101,6 +102,25 @@ export default {
             this.requestUrl = newUrl;
           },
         );
+    },
+    makePaginationArray(currentPage, lastPage) {
+      const pagesArray = [];
+      if (currentPage < 4) {
+        for (let i = 1; i <= 10; i += 1) {
+          pagesArray.push(i);
+        }
+        return pagesArray;
+      }
+      if (currentPage > lastPage - 5) {
+        for (let i = 10; i >= 0; i -= 1) {
+          pagesArray.push(lastPage - i);
+        }
+        return pagesArray;
+      }
+      for (let i = currentPage - 5 > 0 ? currentPage - 5 : 1; i <= currentPage + 5; i += 1) {
+        pagesArray.push(i);
+      }
+      return pagesArray;
     },
   },
 };
