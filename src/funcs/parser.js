@@ -1,3 +1,5 @@
+// тут просто паршу данные для пагинатора
+
 function getPaginationParams(linkHeader, requestUrl) {
   const cP = Number.parseInt(requestUrl.match('&page=(\\d+)')[1], 10);
   const paginationParams = {

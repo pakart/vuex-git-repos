@@ -1,3 +1,5 @@
+// прикрутил роутинг, чтобы через него реализовывать просмотр полной инфы о репозитории
+
 import Vue from 'vue';
 import VueRouter from 'vue-router';
 

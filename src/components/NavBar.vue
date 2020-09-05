@@ -1,3 +1,5 @@
+// тут дефолтный навбар спизженный с materialize
+
 <template>
   <nav class="blue-grey">
     <div class="nav-wrapper">
