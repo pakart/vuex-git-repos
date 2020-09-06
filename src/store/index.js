@@ -2,18 +2,14 @@
 
 import Vue from 'vue';
 import Vuex from 'vuex';
+import searchParams from './modules/searchParams';
+import repos from './modules/repos';
 
 Vue.use(Vuex);
 
 export default new Vuex.Store({
-  state: {
-    searchParams: [],
-  },
-  mutations: {
-  },
-  actions: {
-  },
-  getters: {
-    searchParams: (s) => s.tasks,
+  modules: {
+    searchParams,
+    repos,
   },
 });

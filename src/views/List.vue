@@ -24,7 +24,10 @@
    <hr>
    <div>
      <!-- вот эту таблицу в отдельный компонент нужно выносить -->
-     <table>
+     <div v-if="allRepos.length === 0">
+       <h3>No results!</h3>
+     </div>
+     <table v-else>
        <thead>
         <tr>
           <th>Repo's name</th>
@@ -34,9 +37,9 @@
         </tr>
        </thead>
        <tbody>
-      <tr v-for="(repo) of this.repos"
+      <tr v-for="(repo) of allRepos"
       :key="repo.id">
-        <td>{{repo.name}}</td>
+        <td><b v-on:click="openDetail(repo)">{{repo.name}}</b></td>
         <td>{{repo.stargazers_count}}</td>
         <td>{{new Date(repo.updated_at).toLocaleDateString()}}</td>
         <td>
@@ -51,7 +54,7 @@
    <!-- paginator тоже надо вынести к хуям и подключать из компонента таблицы по идее
     с ним вообще самый трешовый shit fest происходит, уверен его можно в три строки сделать,
     но у меня вот такая дичь происходит: -->
-   <div>
+   <div v-if="moreThanOnePage === true">
     <ul class="pagination">
       <li class="waves-effect" v-on:click="moveToPage(paginationParams.prevPage)">
         <a href="#!"><i class="material-icons" >chevron_left</i></a></li>
@@ -78,56 +81,60 @@
 import parser from '@/funcs/parser';
 import requestStringBuilder from '@/funcs/requestStringBuilder';
 import pageReq from '@/funcs/pageRequestConstructor';
+import { mapGetters } from 'vuex';
 
 export default {
   name: 'list',
   data: () => ({
     repo_name: '',
     isActive: false,
-    repos: [],
+    moreThanOnePage: true,
     paginationParams: {},
     // дефолтная строка запроса топ репозиториев по популярности, решил по фолловерам сделать
-    requestUrl: 'https://api.github.com/search/repositories?q=followers:%3E1&sort=followers&per_page=10&page=1',
+    // requestUrl: 'https://api.github.com/search/repositories?q=followers:%3E1&sort=followers&per_page=10&page=1',
   }),
+  computed: mapGetters(['allRepos', 'searchParams']),
   // вот эта дичь, глобальный метод List компонента который делает вообще всё,
   // и несколько раз)
-  mounted() {
+  async mounted() {
     // точнее функция одна, но она вызывает всё остальное)
+    this.repo_name = this.$store.getters.searchParams.repo_name;
+    console.log('mounted');
     this.searchRepos();
   },
 
   methods: {
     // поиск репозиториев
     searchRepos() {
-      // первый фетч чтобы заголовок получить с данными о колличестве страниц
+      // первый фетч чтобы заголовок получить с данными о количестве страниц
       // тут вроде бы всё из документации к апи
-      fetch(this.requestUrl, { method: 'HEAD' })
+      fetch(this.$store.getters.searchParams.requestUrlString, { method: 'HEAD' })
         .then((response) => {
           const linkHeader = response.headers.get('Link');
-          // тут для пагинатора собираю данный через парсер
-          this.paginationParams = parser(linkHeader, this.requestUrl);
-        });
-      // второй фетч собственно подгружает данные для таблицы
-      fetch(this.requestUrl)
-        .then((response) => response.json())
-        .then(
-          (json) => {
-            this.repos = json.items;
-            // тут формируется текущий массив для пагинатора
-            // так как страниц максимальное колличество 100, может быть 100 элементов, ну
-            // это по-идее не очень, поэтому дальше увидишь танцы с бубном
+          if (linkHeader !== null) {
+            this.moreThanOnePage = true;
+            this.paginationParams = parser(linkHeader,
+              this.$store.getters.searchParams.requestUrlString);
+            this.$store.dispatch('fetchRepos', this.$store.getters.searchParams.requestUrlString);
             this.makePaginationArray(this.paginationParams.currentPage);
-          },
-        );
+          } else {
+            this.moreThanOnePage = false;
+            this.$store.dispatch('fetchRepos', this.$store.getters.searchParams.requestUrlString);
+          }
+        });
     },
     // обработчик нажатия на кнопку поиска
     submitHandler() {
       const searchParams = {
         repo_name: this.repo_name,
+        requestUrlString: '',
       };
       // собираем строку для запроса
       const requestString = requestStringBuilder(searchParams);
-      this.requestUrl = requestString;
+      searchParams.requestUrlString = requestString;
+      //
+      this.$store.dispatch('setSearchParams', searchParams);
+
       // ну и дёргаем метод выше
       this.searchRepos();
     },
@@ -135,22 +142,25 @@ export default {
     // но к базовой строке идёт параметром номер страницы
     // надо по уму перегрузку метода сделать просто
     moveToPage(pageNumber) {
-      const newUrl = pageReq(this.requestUrl, pageNumber);
+      const newUrl = pageReq(this.$store.getters.searchParams.requestUrlString, pageNumber);
+
       fetch(newUrl, { method: 'HEAD' })
         .then((response) => {
           const linkHeader = response.headers.get('Link');
-          this.requestUrl = newUrl;
-          this.paginationParams = parser(linkHeader, this.requestUrl);
+          if (linkHeader !== null) {
+            this.moreThanOnePage = true;
+            this.paginationParams = parser(linkHeader, newUrl);
+            this.$store.dispatch('fetchRepos', newUrl);
+            this.makePaginationArray(this.paginationParams.currentPage);
+          } else {
+            this.moreThanOnePage = false;
+            this.$store.dispatch('fetchRepos', newUrl);
+          }
         });
+    },
 
-      fetch(newUrl)
-        .then((response) => response.json())
-        .then(
-          (json) => {
-            this.repos = json.items;
-            this.requestUrl = newUrl;
-          },
-        );
+    openDetail(repo) {
+      this.$store.dispatch('openRepoDetails', repo);
     },
 
     // дичайший метод
