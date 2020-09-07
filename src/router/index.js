@@ -12,7 +12,7 @@ const routes = [
     component: () => import('@/views/List'),
   },
   {
-    path: '/repo/:id',
+    path: '/repo/:name',
     name: 'repo',
     component: () => import('@/views/InfoRepo'),
   },

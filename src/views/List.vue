@@ -30,7 +30,9 @@
        <tbody>
       <tr v-for="(repo) of allRepos"
       :key="repo.id">
-        <td><b v-on:click="openDetail(repo)">{{repo.name}}</b></td>
+        <td><router-link tag='p' :to="'/repo/' + repo.name">
+          <p v-on:click="openDetail(repo)">{{repo.name}}</p>
+          </router-link></td>
         <td>{{repo.stargazers_count}}</td>
         <td>{{new Date(repo.updated_at).toLocaleDateString()}}</td>
         <td>
@@ -135,6 +137,7 @@ export default {
     },
 
     openDetail(repo) {
+      console.log(repo);
       this.$store.dispatch('openRepoDetails', repo);
     },
 
