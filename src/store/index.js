@@ -1,5 +1,3 @@
-// TODO
-
 import Vue from 'vue';
 import Vuex from 'vuex';
 import searchParams from './modules/searchParams';
